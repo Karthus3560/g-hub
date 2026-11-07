@@ -120,6 +120,10 @@ function detect(tool: string, e: Record<string, unknown>): { kind: string; label
     // Probes are not downloads: output thrown away, headers only, or a spider check.
     if (/(-o|-O|--output|--output-document)[\s=]+["']?(\/dev\/null|nul)\b/i.test(cmd)) return undefined
     if (/\bcurl\b[^|;&]*\s(-I|--head|-\w*I\w*)\b/.test(cmd) || /\bwget\b[^|;&]*--spider/.test(cmd)) return undefined
+    // API calls are not downloads: a request that sends data or names a method other than GET
+    if (/\bcurl\b[^|;&]*\s(-d|--data(-raw|-binary|-urlencode)?|--json|-F|--form|-T|--upload-file)[\s=]/.test(cmd)) return undefined
+    if (/\bcurl\b[^|;&]*\s(-X|--request)[\s=]*["']?(POST|PUT|PATCH|DELETE)\b/i.test(cmd)) return undefined
+    if (/\b(Invoke-WebRequest|iwr|Invoke-RestMethod|irm)\b[^|;&]*-(Method\s+["']?(Post|Put|Patch|Delete)|Body)\b/i.test(cmd)) return undefined
     for (const [re, kind] of SHELL_PATTERNS) if (re.test(cmd)) return { kind, label: short(cmd), cmd }
   }
   return undefined
@@ -695,7 +699,10 @@ export async function loadHistory($: EngineInterface): Promise<HistoryEntry[]> {
 
 /** Writes every download that ended and is not in the history yet; newest first, across sessions. */
 async function recordFinished($: EngineInterface): Promise<void> {
-  const pending = (await read($, items)).filter(d => d.status !== 'running' && !d.isRecorded)
+  const all = (await read($, items)).filter(d => d.status !== 'running' && !d.isRecorded)
+  const empty = all.filter(d => d.status !== 'error' && !d.items.some(i => i.bytes > 0))
+  if (empty.length) await update($, items, list => list.map(x => (empty.some(e => e.id === x.id) ? { ...x, isRecorded: true } : x)))
+  const pending = all.filter(d => !empty.includes(d))
   if (pending.length === 0) return
   const entries: HistoryEntry[] = pending.map(d => ({
     id: d.id,
@@ -810,6 +817,7 @@ export const registerDownloads = (on: On): void => {
     if (e.props.isExpanded) return next(e)
     const d = (await read($, items)).find(x => x.id === e.props.tool_use_id)
     if (!d) return next(e)
+    if (!d.items.some(i => i.bytes > 0) && d.status !== 'error') return next(e)
 
     const view: View =
       e.props.isInterrupted || e.props.isErrored || d.status === 'error' ? 'error' : d.status === 'running' ? 'running' : 'done'
