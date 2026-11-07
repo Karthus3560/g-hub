@@ -1,0 +1,12 @@
+{
+  "name": "g-hub",
+  "version": "0.1.1",
+  "description": "A live task monitor, usage grid and hub sidebar (Tasks, Downloads, Gallery, Usage) above the Claude Code prompt",
+  "types": "./types/index.d.ts",
+  "license": "MIT",
+  "author": {
+    "name": "Ghaith Saad Jawad",
+    "url": "https://github.com/Karthus3560"
+  },
+  "repository": "https://github.com/Karthus3560/g-hub"
+}

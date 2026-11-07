@@ -1,0 +1,13 @@
+{
+  "name": "g-hub",
+  "owner": { "name": "Ghaith Saad Jawad", "url": "https://github.com/Karthus3560" },
+  "metadata": { "description": "G-Hub: a task monitor, usage grid and hub sidebar for Claude Code." },
+  "plugins": [
+    {
+      "name": "g-hub",
+      "source": "./",
+      "description": "A live task monitor with colored, labeled segments, a usage grid (context, 5-hour and weekly resets, session time) and one hub sidebar for Tasks, Downloads, Gallery and Usage.",
+      "version": "0.1.1"
+    }
+  ]
+}
